@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fare Trainer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--black:#000;--nb:#0a0a0a;--surf:#1c1c1e;--surf2:#2c2c2e;--surf3:#3a3a3c;--text:#fff;--t3:#ebebf599;--muted:#636366;--blue:#276EF1;--green:#06C167;--red:#f45531;--amber:#f0a500;}
+html,body{height:100%;background:var(--black);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}
+#app{max-width:393px;margin:0 auto;height:100%;position:relative;overflow:hidden;background:var(--black);}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* SETUP */
+#setupScreen{background:var(--nb);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.setup-hero{padding:56px 24px 28px;background:linear-gradient(180deg,#111 0%,var(--nb) 100%);}
+.setup-logo{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.logo-icon{width:40px;height:40px;background:var(--text);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.logo-wm{font-size:22px;font-weight:700;letter-spacing:-0.5px;}
+.logo-wm span{color:var(--muted);font-weight:400;}
+.setup-hero h1{font-size:30px;font-weight:700;letter-spacing:-0.8px;line-height:1.1;margin-bottom:8px;}
+.setup-hero p{font-size:15px;color:var(--t3);line-height:1.5;}
+.setup-body{padding:8px 16px 32px;}
+.fsl{font-size:11px;font-weight:600;letter-spacing:0.9px;text-transform:uppercase;color:var(--muted);margin:24px 8px 8px;}
+.fg{background:var(--surf);border-radius:14px;overflow:hidden;}
+.fr{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06);gap:12px;}
+.fr:last-child{border-bottom:none;}
+.frl{flex:1;font-size:16px;color:var(--text);}
+.fiw{display:flex;align-items:center;gap:4px;}
+.fp{font-size:16px;color:var(--muted);}
+.fs{font-size:13px;color:var(--muted);}
+input[type=number]{background:transparent;border:none;outline:none;color:var(--text);font-size:16px;font-family:inherit;text-align:right;width:72px;-webkit-appearance:none;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+.start-btn{margin:24px 16px 8px;background:var(--text);color:var(--black);border:none;border-radius:14px;padding:19px 24px;font-size:17px;font-weight:700;width:calc(100% - 32px);cursor:pointer;}
+.start-btn:active{opacity:0.85;transform:scale(0.98);}
+
+/* SHIFT */
+#shiftScreen{background:#1a1a1a;}
+.topbar{background:var(--black);padding:52px 20px 14px;display:flex;align-items:flex-end;justify-content:space-between;flex-shrink:0;}
+.timer-block{flex:1;text-align:center;}
+.timer-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.timer-val{font-size:32px;font-weight:300;letter-spacing:-1.5px;color:var(--text);font-variant-numeric:tabular-nums;transition:color 0.3s;}
+.timer-val.urgent{color:var(--red);}
+.timer-val.warning{color:var(--amber);}
+.end-btn{background:var(--surf2);border:none;color:var(--text);padding:9px 15px;border-radius:22px;font-size:13px;font-weight:500;cursor:pointer;}
+.strip{background:var(--black);border-top:1px solid rgba(255,255,255,0.07);padding:10px 0 12px;display:grid;grid-template-columns:repeat(4,1fr);flex-shrink:0;}
+.ss{text-align:center;padding:0 6px;}
+.ss+.ss{border-left:1px solid rgba(255,255,255,0.07);}
+.sv{font-size:15px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
+.sv.pos{color:var(--green);}
+.sv.neg{color:var(--red);}
+.sl{font-size:10px;color:var(--muted);margin-top:2px;}
+.map-area{flex:1;position:relative;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
+.map-area::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:40px 40px;}
+.wc{position:relative;z-index:1;text-align:center;padding:0 32px;}
+.pulse-ring{width:64px;height:64px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;animation:rp 2s ease-in-out infinite;}
+.pulse-ring::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(255,255,255,0.06);animation:rp 2s ease-in-out infinite 0.3s;}
+.pi{font-size:26px;}
+@keyframes rp{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.05);opacity:0.7;}}
+.wl{font-size:16px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:6px;}
+.wn{font-size:13px;color:var(--muted);margin-bottom:10px;}
+.nb-wrap{width:140px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin:0 auto;overflow:hidden;}
+.nb-fill{height:100%;background:rgba(255,255,255,0.3);border-radius:2px;width:100%;transition:width 0.5s linear;}
+
+/* ON TRIP */
+.otc{position:relative;z-index:1;text-align:center;padding:0 32px;display:none;flex-direction:column;align-items:center;}
+.ot-icon{font-size:40px;margin-bottom:14px;}
+.ot-lbl{font-size:18px;font-weight:600;margin-bottom:6px;}
+.ot-det{font-size:14px;color:var(--muted);line-height:1.5;}
+.ot-earn{margin-top:14px;background:rgba(6,193,103,0.15);border:1px solid rgba(6,193,103,0.3);border-radius:12px;padding:10px 20px;display:inline-block;}
+.ot-earn-l{font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;}
+.ot-earn-v{font-size:26px;font-weight:700;color:var(--green);}
+
+/* FARE CARD */
+.fo{position:absolute;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:flex-end;z-index:50;backdrop-filter:blur(2px);}
+.fo.open{display:flex;}
+.fc{background:#fff;border-radius:22px 22px 0 0;width:100%;padding:16px 20px 44px;color:#000;transform:translateY(100%);transition:transform 0.38s cubic-bezier(0.22,1.1,0.36,1);}
+.fc.up{transform:translateY(0);}
+.ch{width:36px;height:4px;background:rgba(0,0,0,0.12);border-radius:2px;margin:0 auto 18px;}
+.ftb{height:3px;background:#e5e5e5;border-radius:2px;margin-bottom:18px;overflow:hidden;}
+.ftf{height:100%;background:#276EF1;border-radius:2px;width:100%;transition:width 0.25s linear,background 0.3s;}
+.ftf.hot{background:#f45531;}
+.fa-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;}
+.fa-amt{font-size:46px;font-weight:800;letter-spacing:-2px;color:#000;line-height:1;}
+.fa-badge{background:#f5f5f5;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;color:#333;margin-top:6px;text-transform:uppercase;}
+.fa-sub{font-size:13px;color:#999;margin-bottom:18px;}
+.ts{border-top:1px solid #f0f0f0;padding-top:14px;margin-bottom:20px;}
+.tr{display:flex;align-items:center;gap:14px;padding:10px 0;}
+.tr+.tr{border-top:1px solid #f7f7f7;}
+.tp{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.tp.pu{background:#f5f5f5;}
+.tp.do{background:#000;}
+.tt{flex:1;}
+.tl{font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#aaa;margin-bottom:3px;}
+.tv{font-size:18px;font-weight:500;color:#000;}
+.cta{display:flex;gap:10px;}
+.bp{flex:0 0 72px;background:#f0f0f0;color:#000;border:none;border-radius:14px;padding:19px 0;font-size:15px;font-weight:600;cursor:pointer;}
+.bp:active{background:#e0e0e0;transform:scale(0.97);}
+.ba{flex:1;background:#000;color:#fff;border:none;border-radius:14px;padding:19px;font-size:17px;font-weight:700;cursor:pointer;}
+.ba:active{background:#222;transform:scale(0.98);}
+.toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.85);background:var(--surf);border-radius:20px;padding:28px 32px;text-align:center;z-index:100;min-width:220px;opacity:0;pointer-events:none;transition:transform 0.28s cubic-bezier(0.34,1.56,0.64,1),opacity 0.2s;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto;}
+.te{font-size:44px;display:block;margin-bottom:10px;}
+.tt2{font-size:19px;font-weight:700;margin-bottom:4px;}
+.ts2{font-size:13px;color:var(--muted);}
+
+
+/* ACCURACY ROWS */
+.acc-metric{background:var(--surf);border-radius:14px;padding:16px;margin-bottom:10px;}
+.acc-metric:last-child{margin-bottom:0;}
+.acc-metric-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
+.acc-metric-label{font-size:13px;color:var(--muted);}
+.acc-metric-pct{font-size:28px;font-weight:700;letter-spacing:-1px;}
+.acc-metric-pct.great{color:var(--green);}
+.acc-metric-pct.ok{color:var(--amber);}
+.acc-metric-pct.poor{color:var(--red);}
+.acc-metric-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.acc-bar-bg2{height:6px;background:var(--surf3);border-radius:3px;overflow:hidden;}
+.acc-bar-fill2{height:100%;border-radius:3px;transition:width 0.6s cubic-bezier(0.34,1.2,0.64,1);}
+
+/* SUMMARY */
+#summaryScreen{background:var(--black);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.sh{padding:52px 24px 24px;background:linear-gradient(180deg,#111 0%,var(--black) 100%);border-bottom:1px solid var(--surf);}
+.sh-end{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.sh h1{font-size:30px;font-weight:700;letter-spacing:-0.8px;}
+.sh p{font-size:14px;color:var(--t3);margin-top:4px;}
+.ss2{padding:22px 20px 0;}
+.st{font-size:11px;font-weight:600;letter-spacing:0.9px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.tile{background:var(--surf);border-radius:14px;padding:14px 16px;}
+.tl2{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.tv2{font-size:24px;font-weight:700;letter-spacing:-0.5px;color:var(--text);}
+.tsub{font-size:11px;color:var(--muted);margin-top:4px;}
+.tile.tg .tv2{color:var(--green);}
+.tile.tb .tv2{color:var(--red);}
+.div{height:1px;background:var(--surf);margin:20px 0 0;}
+.ar{background:var(--surf);border-radius:14px;padding:16px;display:flex;align-items:center;gap:16px;margin-bottom:10px;}
+.an{font-size:28px;font-weight:700;flex-shrink:0;min-width:64px;}
+.ad{flex:1;}
+.adl{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.abg{height:6px;background:var(--surf3);border-radius:3px;overflow:hidden;}
+.abf{height:100%;background:var(--green);border-radius:3px;}
+.cs{padding:22px 20px 0;}
+.cst{font-size:11px;font-weight:600;letter-spacing:0.9px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.css2{font-size:13px;color:var(--t3);margin-bottom:14px;line-height:1.4;}
+.cw{background:var(--surf);border-radius:16px;overflow:hidden;padding:12px 8px 8px 8px;}
+#scatterSvg{display:block;width:100%;}
+.cl{display:flex;flex-wrap:wrap;gap:10px 16px;padding:12px 16px;}
+.li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3);}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.again-btn{margin:24px 20px 8px;background:var(--text);color:var(--black);border:none;border-radius:14px;padding:19px;font-size:17px;font-weight:700;width:calc(100% - 40px);cursor:pointer;}
+.bsp{height:48px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="setupScreen" class="screen active">
+  <div class="setup-hero">
+    <div class="setup-logo">
+      <div class="logo-icon">🚗</div>
+      <div class="logo-wm">Fare<span>Trainer</span></div>
+    </div>
+    <h1>Train Your Fare Instincts</h1>
+    <p>Practice the $/Mile & $/Hour decisions under time constraint. Fares offered without real world delay to maximize "decision reps".</p>
+  </div>
+  <div class="setup-body">
+    <div class="fsl">Vehicle Costs</div>
+    <div class="fg">
+      <div class="fr"><span class="frl">Fuel Economy</span><div class="fiw"><input type="number" id="mpg" value="30" min="10" max="80" step="1"><span class="fs">mpg</span></div></div>
+      <div class="fr"><span class="frl">Gas Price</span><div class="fiw"><span class="fp">$</span><input type="number" id="gasPrice" value="3.50" min="2" max="8" step="0.10"><span class="fs">/gal</span></div></div>
+      <div class="fr"><span class="frl">Other Running Cost (Probably $.01)</span><div class="fiw"><span class="fp">$</span><input type="number" id="runCost" value="0.08" min="0" max="0.50" step="0.01"><span class="fs">/mi</span></div></div>
+    </div>
+    <div class="fsl">Shift Settings</div>
+    <div class="fg">
+      <div class="fr"><span class="frl">Shift Length</span><div class="fiw"><input type="number" id="shiftHours" value="4" min="1" max="10" step="0.5"><span class="fs">hrs</span></div></div>
+    </div>
+    <div class="fsl">Your Goals</div>
+    <div class="fg">
+      <div class="fr"><span class="frl">Target $/Mile</span><div class="fiw"><span class="fp">$</span><input type="number" id="goalPerMile" value="1.00" min="0.25" max="5" step="0.05"><span class="fs">/mi</span></div></div>
+      <div class="fr"><span class="frl">Target $/Hour</span><div class="fiw"><span class="fp">$</span><input type="number" id="goalPerHour" value="25.00" min="10" max="100" step="1"><span class="fs">/hr</span></div></div>
+    </div>
+  </div>
+  <button class="start-btn" onclick="startShift()">Start Shift →</button>
+  <div style="height:24px"></div>
+</div>
+
+<div id="shiftScreen" class="screen">
+  <div class="topbar">
+    <div style="width:80px"></div>
+    <div class="timer-block">
+      <div class="timer-lbl">Shift Remaining</div>
+      <div class="timer-val" id="timerDisplay">4:00:00</div>
+    </div>
+    <div style="width:80px;display:flex;justify-content:flex-end">
+      <button class="end-btn" onclick="endShift()">End</button>
+    </div>
+  </div>
+  <div class="strip">
+    <div class="ss"><div class="sv" id="sEarned">$0</div><div class="sl">Gross</div></div>
+    <div class="ss"><div class="sv" id="sMiles">0 mi</div><div class="sl">Miles</div></div>
+    <div class="ss"><div class="sv" id="sPerMile">—</div><div class="sl">$/Mile</div></div>
+    <div class="ss"><div class="sv" id="sPerHour">—</div><div class="sl">$/Hour</div></div>
+  </div>
+  <div class="map-area">
+    <div class="wc" id="waitingCenter">
+      <div class="pulse-ring"><div class="pi">🚘</div></div>
+      <div class="wl">Waiting for fare request…</div>
+
+    </div>
+    <div class="otc" id="onTripCenter">
+      <div class="ot-icon">🛣️</div>
+      <div class="ot-lbl">On Trip</div>
+      <div class="ot-det" id="onTripDetail">—</div>
+      <div class="ot-earn"><div class="ot-earn-l">This Fare</div><div class="ot-earn-v" id="onTripEarnings">$0.00</div></div>
+    </div>
+  </div>
+  <div class="fo" id="fareOverlay">
+    <div class="fc" id="fareCard">
+      <div class="ch"></div>
+      <div class="ftb"><div class="ftf" id="fareTimerFill"></div></div>
+      <div class="fa-top">
+        <div class="fa-amt" id="fcAmount">$0.00</div>
+        <div class="fa-badge">UberX</div>
+      </div>
+      <div class="fa-sub">Fare estimate — UberX</div>
+      <div class="ts">
+        <div class="tr"><div class="tp pu">📍</div><div class="tt"><div class="tl">Pickup</div><div class="tv" id="fcPickup">—</div></div></div>
+        <div class="tr"><div class="tp do">🏁</div><div class="tt"><div class="tl">Drop-off</div><div class="tv" id="fcDropoff">—</div></div></div>
+      </div>
+      <div class="cta">
+        <button class="bp" onclick="handlePass()">✕</button>
+        <button class="ba" onclick="handleAccept()">Accept →</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="resultToast">
+    <span class="te" id="toastEmoji">🎉</span>
+    <div class="tt2" id="toastTitle">Matched!</div>
+    <div class="ts2" id="toastSub">Trip added</div>
+  </div>
+</div>
+
+<div id="summaryScreen" class="screen">
+  <div class="sh">
+    <div class="sh-end">Shift Complete</div>
+    <h1>End of Shift</h1>
+    <p id="sumSubtitle">—</p>
+  </div>
+  <div class="ss2"><div class="st">Your Earnings</div><div class="g2" id="earningsGrid"></div></div>
+  <div class="ss2"><div class="st">Your Rates</div><div class="g2" id="ratesGrid"></div></div>
+  <div class="div"></div>
+  <div class="ss2" style="margin-top:20px"><div class="st">Shift Accuracy</div><div id="accuracyGrid"></div></div>
+  <div class="div"></div>
+  <div class="ss2" style="margin-top:20px">
+    <div class="st">Acceptance</div>
+    <div id="acceptanceBlock"></div>
+    <div class="g2" id="activityGrid"></div>
+  </div>
+  <div class="div"></div>
+  <div class="cs" style="margin-top:20px">
+    <div class="cst">Your Fare Tendencies</div>
+    <div class="css2">Each dot is a fare you were offered. Does your acceptance pattern align with your goals? The dashed line marks your $/mile target.</div>
+    <div class="cw">
+      <svg id="scatterSvg" viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="cl" id="chartLegend"></div>
+    </div>
+  </div>
+  <button class="again-btn" onclick="playAgain()">New Shift →</button>
+  <div class="bsp"></div>
+</div>
+
+</div>
+<script>
+// ── CONSTANTS ──────────────────────────────────────────
+// 1:1 real-time. Fares arrive instantly (unlike actual Uber).
+const FARE_WIN    = 12;    // 12 real seconds to accept (like real Uber)
+const MAX_HRS     = 10;
+
+let cfg = {}, G = {};
+const rand   = (a,b) => Math.random()*(b-a)+a;
+const f1     = n    => parseFloat(n).toFixed(1);
+const fmt$   = n    => '$' + Math.abs(n).toFixed(2);
+
+function fmtHMS(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function fmtMS(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+}
+function svgEl(t,a){const e=document.createElementNS('http://www.w3.org/2000/svg',t);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,v));return e;}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+// ── FARE GENERATION ────────────────────────────────────
+// Three-tier distribution matching real peak-hour Uber market:
+//   70% bad  — far pickup, low rates (the fares that erode your averages)
+//   25% ok   — moderate rates, mixed pickup (takes discipline to pass)
+//   5% good — close pickup, surge-like rates ($2+/mi, $40+/hr possible)
+function generateFare() {
+  const tier = Math.random(); // 0-0.7 bad, 0.7-0.95 ok, 0.95-1.0 ideal
+
+  let pmi, dmi, rmi, rmin, dSpeed;
+
+  if (tier < 0.70) {
+    // ── BAD: far pickup, low rate, short/medium trip ──
+    pmi    = parseFloat(rand(2.5, 9.5).toFixed(1));
+    dmi    = parseFloat((Math.random()<0.6 ? rand(1.2,5.5) : rand(5.5,12.0)).toFixed(1));
+    rmi    = rand(0.44, 0.72);
+    rmin   = rand(0.10, 0.16);
+    dSpeed = rand(17, 35);
+  } else if (tier < 0.95) {
+    // ── OK: normal pickup, medium rate ──
+    pmi    = parseFloat(rand(0.5, 4.0).toFixed(1));
+    dmi    = parseFloat((Math.random()<0.5 ? rand(3.0,8.0) : rand(8.0,16.0)).toFixed(1));
+    rmi    = rand(0.72, 1.15);
+    rmin   = rand(0.14, 0.20);
+    dSpeed = rand(22, 42);
+  } else {
+    // ── GOOD: close pickup, high rate (surge / lucky fare) ──
+    pmi    = parseFloat(rand(0.2, 2.5).toFixed(1));
+    dmi    = parseFloat((Math.random()<0.5 ? rand(4.0,10.0) : rand(10.0,20.0)).toFixed(1));
+    rmi    = rand(1.30, 2.60);   // this is what creates $2+/mile fares
+    rmin   = rand(0.20, 0.35);   // and $40+/hour on faster routes
+    dSpeed = rand(30, 55);       // highway-ish speed = good $/hr
+  }
+
+  const pmin  = Math.max(2, Math.round((pmi / rand(14,32)) * 60));
+  const dmin  = Math.max(3, Math.round((dmi / dSpeed) * 60));
+  const base  = rand(0.75, 1.50);
+  const fare  = Math.max(3.00, parseFloat((base + dmi*rmi + dmin*rmin).toFixed(2)));
+  const tmi   = parseFloat((pmi+dmi).toFixed(1));
+  const tmin  = pmin+dmin;
+
+  return {
+    fareAmount:fare, pickupMiles:pmi, pickupMinutes:pmin,
+    dropoffMiles:dmi, dropoffMinutes:dmin,
+    totalMiles:tmi, totalMinutes:tmin,
+    grossPerMile:fare/tmi, grossPerHour:fare/(tmin/60),
+    meetsGoals: fare/tmi>=cfg.goalPerMile && fare/(tmin/60)>=cfg.goalPerHour,
+    decision:null, matched:false
+  };
+}
+
+// ── START SHIFT ────────────────────────────────────────
+function startShift() {
+  cfg = {
+    mpg:         Math.max(1, parseFloat(document.getElementById('mpg').value)||30),
+    gasPrice:    parseFloat(document.getElementById('gasPrice').value)||3.50,
+    runCost:     parseFloat(document.getElementById('runCost').value)||0.08,
+    shiftHours:  Math.min(MAX_HRS, parseFloat(document.getElementById('shiftHours').value)||4),
+    goalPerMile: parseFloat(document.getElementById('goalPerMile').value)||1.00,
+    goalPerHour: parseFloat(document.getElementById('goalPerHour').value)||25.00,
+  };
+  cfg.cpm = (cfg.gasPrice/cfg.mpg) + cfg.runCost;
+
+  G = {
+    remSec:       cfg.shiftHours * 3600,  // real 1:1 seconds
+    maxSec:       cfg.shiftHours * 3600,
+    grossEarned:  0, totalMiles:0, totalMinutes:0,
+    fares:[], accepted:0, passed:0, expired:0, matched:0,
+    activeFare:null, ivLen:0,
+    shiftTick:null, nextTick:null, fareTick:null,
+    phase:'waiting',
+  };
+
+  showScreen('shiftScreen');
+  setWaiting();
+  updateStrip();
+  updateTimer();
+
+  // Main 1:1 clock — ticks every real second
+  G.shiftTick = setInterval(()=>{
+    G.remSec--;
+    if(G.remSec<=0){G.remSec=0;clearAll();hideFare(false);setTimeout(endShift,600);return;}
+    updateTimer();
+  },1000);
+
+  scheduleNext();
+}
+
+function clearAll(){clearInterval(G.shiftTick);clearTimeout(G.nextTick);clearInterval(G.fareTick);}
+
+function updateTimer(){
+  const el=document.getElementById('timerDisplay'),f=G.remSec/G.maxSec;
+  el.textContent=fmtHMS(G.remSec);
+  el.className='timer-val'+(f<0.10?' urgent':f<0.25?' warning':'');
+}
+
+// ── NEXT FARE — appears immediately after a brief UX pause ──
+function scheduleNext() {
+  if(G.remSec<=0) return;
+  G.phase='waiting'; setWaiting();
+  clearTimeout(G.nextTick);
+  G.nextTick = setTimeout(()=>{ if(G.remSec>0) showFare(); }, 1200);
+}
+
+// ── SHOW FARE CARD ─────────────────────────────────────
+function showFare(){
+  if(G.remSec<=0) return;
+  clearInterval(G.fareTick); G.phase='fare';
+  const fare=generateFare(); G.activeFare=fare; G.fares.push(fare);
+
+  // Populate card — NO $/mile or $/hour displayed
+  document.getElementById('fcAmount').textContent  = fmt$(fare.fareAmount);
+  document.getElementById('fcPickup').textContent  = f1(fare.pickupMiles)+' mi · '+fare.pickupMinutes+' min';
+  document.getElementById('fcDropoff').textContent = f1(fare.dropoffMiles)+' mi · '+fare.dropoffMinutes+' min';
+
+  const ov=document.getElementById('fareOverlay'),cd=document.getElementById('fareCard');
+  ov.classList.add('open');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>cd.classList.add('up')));
+
+  let cl=FARE_WIN;
+  G.fareTick=setInterval(()=>{
+    cl-=0.25; const fr=Math.max(0,cl/FARE_WIN);
+    const fill=document.getElementById('fareTimerFill');
+    if(fill){fill.style.width=(fr*100)+'%';fill.classList.toggle('hot',fr<0.33);}
+    if(cl<=0){clearInterval(G.fareTick);expireFare();}
+  },250);
+}
+
+function hideFare(animate){
+  clearInterval(G.fareTick);
+  const ov=document.getElementById('fareOverlay'),cd=document.getElementById('fareCard');
+  cd.classList.remove('up');
+  const fill=document.getElementById('fareTimerFill');
+  if(fill){fill.style.width='100%';fill.classList.remove('hot');}
+  if(animate) setTimeout(()=>ov.classList.remove('open'),400);
+  else ov.classList.remove('open');
+}
+
+// ── USER ACTIONS ───────────────────────────────────────
+function handlePass(){
+  if(!G.activeFare||G.activeFare.decision)return;
+  clearInterval(G.fareTick); G.activeFare.decision='passed'; G.passed++;
+  G.remSec=Math.max(0,G.remSec-60); updateTimer();
+  hideFare(true); setTimeout(()=>{if(G.remSec>0)scheduleNext();},500);
+}
+
+function handleAccept(){
+  if(!G.activeFare||G.activeFare.decision)return;
+  clearInterval(G.fareTick);
+  const fare=G.activeFare; fare.decision='accepted'; G.accepted++;
+  hideFare(true);
+  const matched=Math.random()<0.90; fare.matched=matched;
+  if(matched){
+    G.matched++; G.grossEarned+=fare.fareAmount;
+    G.totalMiles+=fare.totalMiles; G.totalMinutes+=fare.totalMinutes;
+    // Deduct trip time from shift (driver occupied)
+    G.remSec=Math.max(0,G.remSec-fare.totalMinutes*60);
+    updateTimer(); updateStrip();
+    showOnTrip(fare);
+  } else {
+    showToast('😕','No Match','Rider cancelled — back to queue');
+    setTimeout(()=>{if(G.remSec>0)scheduleNext();},2200);
+  }
+}
+
+function expireFare(){
+  if(!G.activeFare||G.activeFare.decision)return;
+  G.activeFare.decision='expired'; G.expired++;
+  G.remSec=Math.max(0,G.remSec-60); updateTimer();
+  hideFare(true);
+  setTimeout(()=>{if(G.remSec>0&&G.phase!=='on_trip')scheduleNext();},600);
+}
+
+// ── ON TRIP ────────────────────────────────────────────
+function showOnTrip(fare){
+  G.phase='on_trip';
+  document.getElementById('waitingCenter').style.display='none';
+  const ot=document.getElementById('onTripCenter');
+  ot.style.display='flex'; ot.style.flexDirection='column'; ot.style.alignItems='center';
+  document.getElementById('onTripDetail').textContent=f1(fare.dropoffMiles)+' mi · '+fare.dropoffMinutes+' min';
+  document.getElementById('onTripEarnings').textContent=fmt$(fare.fareAmount);
+  // Brief display then schedule next (post-trip repositioning wait)
+  setTimeout(()=>{
+    ot.style.display='none';
+    document.getElementById('waitingCenter').style.display='block';
+    if(G.remSec>0) scheduleNext();
+  },2500);
+}
+
+function setWaiting(){
+  document.getElementById('waitingCenter').style.display='block';
+  document.getElementById('onTripCenter').style.display='none';
+}
+
+// ── TOAST ──────────────────────────────────────────────
+function showToast(emoji,title,sub){
+  const t=document.getElementById('resultToast');
+  document.getElementById('toastEmoji').textContent=emoji;
+  document.getElementById('toastTitle').textContent=title;
+  document.getElementById('toastSub').textContent=sub;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ── STATS STRIP ────────────────────────────────────────
+function updateStrip(){
+  document.getElementById('sEarned').textContent='$'+G.grossEarned.toFixed(0);
+  document.getElementById('sMiles').textContent=G.totalMiles.toFixed(1)+' mi';
+  if(G.totalMiles>0){const g=G.grossEarned/G.totalMiles,el=document.getElementById('sPerMile');el.textContent='$'+g.toFixed(2);el.className='sv '+(g>=cfg.goalPerMile?'pos':'neg');}
+  if(G.totalMinutes>0){const g=G.grossEarned/(G.totalMinutes/60),el=document.getElementById('sPerHour');el.textContent='$'+g.toFixed(2);el.className='sv '+(g>=cfg.goalPerHour?'pos':'neg');}
+}
+
+// ── END SHIFT ──────────────────────────────────────────
+function endShift(){clearAll();hideFare(false);buildSummary();showScreen('summaryScreen');}
+
+// ── SUMMARY ────────────────────────────────────────────
+function buildSummary(){
+  const hw=G.totalMinutes/60||0.001, gc=G.totalMiles*(cfg.gasPrice/cfg.mpg), rc=G.totalMiles*cfg.runCost, tc=gc+rc, ne=G.grossEarned-tc;
+  const gpm=G.totalMiles>0?G.grossEarned/G.totalMiles:0, npm=G.totalMiles>0?ne/G.totalMiles:0;
+  const gph=G.grossEarned/hw, nph=ne/hw;
+
+  const hs=cfg.shiftHours===1?'1-hour':cfg.shiftHours+'-hour';
+  document.getElementById('sumSubtitle').textContent=hs+' shift · '+G.matched+' rides completed · '+G.fares.length+' fares offered';
+  document.getElementById('earningsGrid').innerHTML=
+    T('Gross Earned','$'+G.grossEarned.toFixed(2),null,G.grossEarned>0?'tg':'')+
+    T('Net Earned','$'+ne.toFixed(2),'After $'+tc.toFixed(2)+' costs',ne>=0?'tg':'tb')+
+    T('Gas Cost','$'+gc.toFixed(2),null,'')+T('Running Cost','$'+rc.toFixed(2),null,'');
+  document.getElementById('ratesGrid').innerHTML=
+    T('Gross $/Mile','$'+gpm.toFixed(2),'Goal: $'+cfg.goalPerMile.toFixed(2),gpm>=cfg.goalPerMile?'tg':'tb')+
+    T('Net $/Mile','$'+npm.toFixed(2),'After costs',npm>=cfg.goalPerMile?'tg':'tb')+
+    T('Gross $/Hour','$'+gph.toFixed(2),'Goal: $'+cfg.goalPerHour.toFixed(2),gph>=cfg.goalPerHour?'tg':'tb')+
+    T('Net $/Hour','$'+nph.toFixed(2),'After costs',nph>=cfg.goalPerHour?'tg':'tb');
+  // Accuracy metrics: what % of qualifying fares did the user accept?
+  const miOk   = G.fares.filter(f=>f.grossPerMile>=cfg.goalPerMile);
+  const hrOk   = G.fares.filter(f=>f.grossPerHour>=cfg.goalPerHour);
+  const bothOk = G.fares.filter(f=>f.meetsGoals);
+  const miHit   = miOk.filter(f=>f.decision==='accepted').length;
+  const hrHit   = hrOk.filter(f=>f.decision==='accepted').length;
+  const bothHit = bothOk.filter(f=>f.decision==='accepted').length;
+  const miPct   = miOk.length   > 0 ? miHit/miOk.length*100     : null;
+  const hrPct   = hrOk.length   > 0 ? hrHit/hrOk.length*100     : null;
+  const bothPct = bothOk.length > 0 ? bothHit/bothOk.length*100 : null;
+  function accRow(label, pct, hit, total) {
+    if(pct===null) return '<div class="acc-metric"><div class="acc-metric-top"><span class="acc-metric-label">'+label+'</span><span class="acc-metric-pct ok">—</span></div><div class="acc-metric-sub">No qualifying fares offered</div></div>';
+    const cls = pct>=80?'great':pct>=50?'ok':'poor';
+    const barColor = pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+    return '<div class="acc-metric">'+
+      '<div class="acc-metric-top"><span class="acc-metric-label">'+label+'</span><span class="acc-metric-pct '+cls+'">'+pct.toFixed(0)+'%</span></div>'+
+      '<div class="acc-metric-sub">Accepted '+hit+' of '+total+' qualifying fares</div>'+
+      '<div class="acc-bar-bg2" style="margin-top:8px"><div class="acc-bar-fill2" style="width:'+pct+'%;background:'+barColor+'"></div></div>'+
+    '</div>';
+  }
+  document.getElementById('accuracyGrid').innerHTML =
+    accRow('Acceptable $/Mile fares caught', miPct, miHit, miOk.length) +
+    accRow('Acceptable $/Hour fares caught', hrPct, hrHit, hrOk.length) +
+    accRow('Fares good on both $/Mile & $/Hour caught', bothPct, bothHit, bothOk.length);
+  const td=G.accepted+G.passed+G.expired, ar=td>0?G.accepted/td*100:0;
+  document.getElementById('acceptanceBlock').innerHTML=`<div class="ar"><div class="an">${ar.toFixed(0)}%</div><div class="ad"><div class="adl">Acceptance Rate · ${G.accepted} accepted of ${td} offered</div><div class="abg"><div class="abf" style="width:${ar}%"></div></div></div></div>`;
+  document.getElementById('activityGrid').innerHTML=
+    T('Fares Offered',G.fares.length,null,'')+T('Matched Rides',G.matched+' of '+G.accepted,null,'')+
+    T('Passed',G.passed,null,'')+T('Expired',G.expired,null,'');
+  buildScatter();
+}
+
+function T(label,value,sub,ec){return`<div class="tile ${ec}"><div class="tl2">${label}</div><div class="tv2">${value}</div>${sub?'<div class="tsub">'+sub+'</div>':''}</div>`;}
+
+// ── SCATTER ────────────────────────────────────────────
+function buildScatter(){
+  const svg=document.getElementById('scatterSvg'); svg.innerHTML='';
+  const fares=G.fares;
+  if(!fares.length){const t=svgEl('text',{x:170,y:120,'text-anchor':'middle',fill:'#555','font-size':14,'font-family':'sans-serif'});t.textContent='No fares to display';svg.appendChild(t);return;}
+  const ML=42,MR=12,MT=12,MB=32,W=340,H=240,PW=W-ML-MR,PH=H-MT-MB;
+  const mxX=Math.max(...fares.map(f=>f.totalMiles))*1.12||30, mxY=Math.max(...fares.map(f=>f.fareAmount))*1.12||30;
+  const px=m=>ML+(m/mxX)*PW, py=d=>MT+PH-(d/mxY)*PH;
+  svg.appendChild(svgEl('rect',{x:ML,y:MT,width:PW,height:PH,fill:'#111',rx:6}));
+  for(let i=1;i<=4;i++){
+    const x=ML+(i/4)*PW;
+    svg.appendChild(svgEl('line',{x1:x,y1:MT,x2:x,y2:MT+PH,stroke:'rgba(255,255,255,0.07)','stroke-width':1}));
+    const l=svgEl('text',{x,y:H-MB+16,'text-anchor':'middle',fill:'#555','font-size':9,'font-family':'sans-serif'});l.textContent=(mxX*i/4).toFixed(0)+'mi';svg.appendChild(l);
+  }
+  for(let i=1;i<=4;i++){
+    const y=MT+PH-(i/4)*PH;
+    svg.appendChild(svgEl('line',{x1:ML,y1:y,x2:ML+PW,y2:y,stroke:'rgba(255,255,255,0.07)','stroke-width':1}));
+    const l=svgEl('text',{x:ML-4,y:y+4,'text-anchor':'end',fill:'#555','font-size':9,'font-family':'sans-serif'});l.textContent='$'+(mxY*i/4).toFixed(0);svg.appendChild(l);
+  }
+  const rx2=Math.min(mxX,mxY/cfg.goalPerMile);
+  svg.appendChild(svgEl('line',{x1:px(0),y1:py(0),x2:px(rx2),y2:py(rx2*cfg.goalPerMile),stroke:'#276EF1','stroke-width':1.5,'stroke-dasharray':'5 3',opacity:0.8}));
+  const gx=px(Math.min(rx2*0.6,mxX*0.75)),gy=py(Math.min(rx2*0.6,mxX*0.75)*cfg.goalPerMile)-6;
+  const gl=svgEl('text',{x:gx,y:gy,'text-anchor':'middle',fill:'#276EF1','font-size':9,opacity:0.85,'font-family':'sans-serif'});gl.textContent='$'+cfg.goalPerMile.toFixed(2)+'/mi goal';svg.appendChild(gl);
+  svg.appendChild(svgEl('line',{x1:ML,y1:MT,x2:ML,y2:MT+PH,stroke:'rgba(255,255,255,0.15)','stroke-width':1}));
+  svg.appendChild(svgEl('line',{x1:ML,y1:MT+PH,x2:ML+PW,y2:MT+PH,stroke:'rgba(255,255,255,0.15)','stroke-width':1}));
+  const ax=svgEl('text',{x:ML+PW/2,y:H-2,'text-anchor':'middle',fill:'#666','font-size':10,'font-family':'sans-serif'});ax.textContent='Total Miles (pickup + drop-off)';svg.appendChild(ax);
+  fares.forEach(fare=>{
+    const cx=px(fare.totalMiles), cy=py(fare.fareAmount);
+    if(cx<ML||cx>ML+PW||cy<MT||cy>MT+PH) return;
+    let fill,stroke='none',r=5.5,sw=0;
+    if(fare.decision==='accepted'&&fare.matched)     {fill='#06C167';}
+    else if(fare.decision==='accepted'&&!fare.matched){fill='none';stroke='#f0a500';r=5;sw=1.8;}
+    else if(fare.decision==='passed')                 {fill='#444';}
+    else                                              {fill='#252525';stroke='#f45531';r=4.5;sw=1.5;}
+    svg.appendChild(svgEl('circle',{cx,cy,r,fill,stroke,'stroke-width':sw}));
+  });
+  document.getElementById('chartLegend').innerHTML=`
+    <div class="li"><div class="ld" style="background:#06C167"></div>Accepted & matched</div>
+    <div class="li"><div class="ld" style="background:transparent;border:1.8px solid #f0a500"></div>Accepted, no match</div>
+    <div class="li"><div class="ld" style="background:#444"></div>Passed</div>
+    <div class="li"><div class="ld" style="background:#252525;border:1.5px solid #f45531"></div>Expired</div>`;
+}
+
+function playAgain(){showScreen('setupScreen');}
+</script>
+</body>
+</html>
